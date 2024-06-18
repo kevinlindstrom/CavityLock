@@ -139,9 +139,9 @@ status["runStreaming"] = ps.ps5000aRunStreaming(chandle,
 assert_pico_ok(status["runStreaming"])
 
 actualSampleInterval = sampleInterval.value
-actualSampleIntervalNs = actualSampleInterval * 1000
+# actualSampleInterval = actualSampleInterval * 1000
 
-print("Capturing at sample interval %s ns" % actualSampleIntervalNs)
+print("Capturing at sample interval %s s" % actualSampleInterval)
 
 # We need a big buffer, not registered with the driver, to keep our complete capture in.
 bufferCompleteA = np.zeros(shape=totalSamples, dtype=np.int16)
@@ -185,15 +185,17 @@ status["maximumValue"] = ps.ps5000aMaximumValue(chandle, ctypes.byref(maxADC))
 assert_pico_ok(status["maximumValue"])
 
 # Convert ADC counts data to mV
-adc2mVChAMax = adc2mV(bufferCompleteA, channel_range, maxADC)
-adc2mVChBMax = adc2mV(bufferCompleteB, channel_range, maxADC)
+adc2mVChAMax = adc2mV(bufferCompleteA.astype(int), channel_range, maxADC)
+adc2mVChBMax = adc2mV(bufferCompleteB.astype(int), channel_range, maxADC)
 
 # Create time data
-time = np.linspace(0, (totalSamples - 1) * actualSampleIntervalNs*1e-9, totalSamples)
+time = np.linspace(0, (totalSamples - 1) * actualSampleInterval, totalSamples)
 
 # Plot data from channel A and B
 plt.plot(time, adc2mVChAMax[:])
 plt.plot(time, adc2mVChBMax[:])
+# plt.plot(time, bufferCompleteA)
+# plt.plot(time, bufferCompleteB)
 plt.xlabel('Time (s)')
 plt.ylabel('Voltage (mV)')
 plt.show()
