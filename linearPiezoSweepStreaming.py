@@ -44,7 +44,7 @@ except: # PicoNotOkError:
     assert_pico_ok(status["changePowerSource"])
 
 # --------------------------------------------------------------------- Ramp AWG
-wavetype = ctypes.c_int32(0)
+wavetype = ctypes.c_int32(3)
 sweepType = ctypes.c_int32(0)
 triggertype = ctypes.c_int32(0)
 triggerSource = ctypes.c_int32(0)
@@ -206,10 +206,7 @@ assert_pico_ok(status["close"])
 # Display status returns
 print(status)
 
-# headers = ["Piezo Monitor", "PD Voltage"]
-print(adc2mVChCMax[0])
 df = pd.DataFrame({"time (s)" : time, 
                    "Piezo Monitor (mV)" : adc2mVChCMax, 
                    "PD Voltage (mV)" : adc2mVChDMax})
 df.to_csv(file, index=False)
-# df.to_csv(file)
