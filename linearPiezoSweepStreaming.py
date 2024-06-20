@@ -4,7 +4,12 @@ from picosdk.ps5000a import ps5000a as ps
 import matplotlib.pyplot as plt
 from picosdk.functions import adc2mV, assert_pico_ok
 import time
+import pandas as pd
 import math
+
+
+# Output file
+file = "testData.csv"
 
 
 def getTimeUnitFactor(timeEnum):
@@ -44,10 +49,13 @@ sweepType = ctypes.c_int32(0)
 triggertype = ctypes.c_int32(0)
 triggerSource = ctypes.c_int32(0)
 
-status["setSigGenBuiltInV2"] = ps.ps5000aSetSigGenBuiltInV2(chandle, 1000000, 2000000, wavetype, 0.2, 0.2, 0, 1, sweepType, 0, 0, 0, triggertype, triggerSource, 0)
+status["setSigGenBuiltInV2"] = ps.ps5000aSetSigGenBuiltInV2(chandle, 
+                                                            1000000, 2000000, 
+                                                            wavetype, 0.2, 0.2, 
+                                                            0, 1, sweepType, 0,
+                                                            0, 0, triggertype,
+                                                            triggerSource, 0)
 assert_pico_ok(status["setSigGenBuiltInV2"])
-
-
 
 
 # -------------------------------------------------------------------- Streaming
@@ -77,7 +85,7 @@ assert_pico_ok(status["setChD"])
 
 # Size of capture
 sizeOfOneBuffer = 500
-numBuffersToCapture = 10
+numBuffersToCapture = 200
 totalSamples = sizeOfOneBuffer * numBuffersToCapture
 
 # Create buffers ready for assigning pointers for data collection
@@ -197,3 +205,11 @@ assert_pico_ok(status["close"])
 
 # Display status returns
 print(status)
+
+# headers = ["Piezo Monitor", "PD Voltage"]
+print(adc2mVChCMax[0])
+df = pd.DataFrame({"time (s)" : time, 
+                   "Piezo Monitor (mV)" : adc2mVChCMax, 
+                   "PD Voltage (mV)" : adc2mVChDMax})
+df.to_csv(file, index=False)
+# df.to_csv(file)
