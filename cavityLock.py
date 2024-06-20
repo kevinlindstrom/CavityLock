@@ -41,25 +41,25 @@ enabled = 1
 disabled = 0
 analogue_offset = 0.0
 
-# Set up channel A
-channel_rangeA = ps.PS5000A_RANGE['PS5000A_5V']
-status["setChA"] = ps.ps5000aSetChannel(chandle,
-                                        ps.PS5000A_CHANNEL['PS5000A_CHANNEL_A'],
+# Set up channel C
+channel_rangeC = ps.PS5000A_RANGE['PS5000A_10V']
+status["setChC"] = ps.ps5000aSetChannel(chandle,
+                                        ps.PS5000A_CHANNEL['PS5000A_CHANNEL_C'],
                                         enabled,
                                         ps.PS5000A_COUPLING['PS5000A_DC'],
-                                        channel_rangeA,
+                                        channel_rangeC,
                                         analogue_offset)
-assert_pico_ok(status["setChA"])
+assert_pico_ok(status["setChC"])
 
-# Set up channel B
-channel_rangeB = ps.PS5000A_RANGE['PS5000A_20V']
-status["setChB"] = ps.ps5000aSetChannel(chandle,
+# Set up channel D
+channel_rangeD = ps.PS5000A_RANGE['PS5000A_20V']
+status["setChD"] = ps.ps5000aSetChannel(chandle,
                                         ps.PS5000A_CHANNEL['PS5000A_CHANNEL_B'],
                                         enabled,
                                         ps.PS5000A_COUPLING['PS5000A_DC'],
-                                        channel_rangeB,
+                                        channel_rangeD,
                                         analogue_offset)
-assert_pico_ok(status["setChB"])
+assert_pico_ok(status["setChD"])
 
 # Size of capture
 sizeOfOneBuffer = 500
@@ -67,30 +67,30 @@ numBuffersToCapture = 10
 totalSamples = sizeOfOneBuffer * numBuffersToCapture
 
 # Create buffers ready for assigning pointers for data collection
-bufferAMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
-bufferBMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
+bufferCMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
+bufferDMax = np.zeros(shape=sizeOfOneBuffer, dtype=np.int16)
 
 memory_segment = 0
 
-# Set data buffer location for data collection from channel A
-status["setDataBuffersA"] = ps.ps5000aSetDataBuffers(chandle,
-                                                     ps.PS5000A_CHANNEL['PS5000A_CHANNEL_A'],
-                                                     bufferAMax.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
+# Set data buffer location for data collection from channel C
+status["setDataBuffersC"] = ps.ps5000aSetDataBuffers(chandle,
+                                                     ps.PS5000A_CHANNEL['PS5000A_CHANNEL_C'],
+                                                     bufferCMax.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
                                                      None,
                                                      sizeOfOneBuffer,
                                                      memory_segment,
                                                      ps.PS5000A_RATIO_MODE['PS5000A_RATIO_MODE_NONE'])
-assert_pico_ok(status["setDataBuffersA"])
+assert_pico_ok(status["setDataBuffersC"])
 
-# Set data buffer location for data collection from channel B
-status["setDataBuffersB"] = ps.ps5000aSetDataBuffers(chandle,
-                                                     ps.PS5000A_CHANNEL['PS5000A_CHANNEL_B'],
-                                                     bufferBMax.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
+# Set data buffer location for data collection from channel D
+status["setDataBuffersD"] = ps.ps5000aSetDataBuffers(chandle,
+                                                     ps.PS5000A_CHANNEL['PS5000A_CHANNEL_D'],
+                                                     bufferDMax.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)),
                                                      None,
                                                      sizeOfOneBuffer,
                                                      memory_segment,
                                                      ps.PS5000A_RATIO_MODE['PS5000A_RATIO_MODE_NONE'])
-assert_pico_ok(status["setDataBuffersB"])
+assert_pico_ok(status["setDataBuffersD"])
 
 # Begin streaming mode:
 sampleInterval = ctypes.c_int32(250)
@@ -118,8 +118,8 @@ actualSampleInterval = sampleInterval.value*getTimeUnitFactor(sampleUnits)
 print("Capturing at sample interval %s s" % actualSampleInterval)
 
 # We need a big buffer, not registered with the driver, to keep our complete capture in.
-bufferCompleteA = np.zeros(shape=totalSamples, dtype=np.int16)
-bufferCompleteB = np.zeros(shape=totalSamples, dtype=np.int16)
+bufferCompleteC = np.zeros(shape=totalSamples, dtype=np.int16)
+bufferCompleteD = np.zeros(shape=totalSamples, dtype=np.int16)
 nextSample = 0
 autoStopOuter = False
 wasCalledBack = False
@@ -130,8 +130,8 @@ def streaming_callback(handle, noOfSamples, startIndex, overflow, triggerAt, tri
     wasCalledBack = True
     destEnd = nextSample + noOfSamples
     sourceEnd = startIndex + noOfSamples
-    bufferCompleteA[nextSample:destEnd] = bufferAMax[startIndex:sourceEnd]
-    bufferCompleteB[nextSample:destEnd] = bufferBMax[startIndex:sourceEnd]
+    bufferCompleteC[nextSample:destEnd] = bufferCMax[startIndex:sourceEnd]
+    bufferCompleteD[nextSample:destEnd] = bufferDMax[startIndex:sourceEnd]
     nextSample += noOfSamples
     if autoStop:
         autoStopOuter = True
@@ -158,15 +158,15 @@ status["maximumValue"] = ps.ps5000aMaximumValue(chandle, ctypes.byref(maxADC))
 assert_pico_ok(status["maximumValue"])
 
 # Convert ADC counts data to mV
-adc2mVChAMax = adc2mV(bufferCompleteA.astype(int), channel_rangeA, maxADC)
-adc2mVChBMax = adc2mV(bufferCompleteB.astype(int), channel_rangeB, maxADC)
+adc2mVChCMax = adc2mV(bufferCompleteC.astype(int), channel_rangeC, maxADC)
+adc2mVChDMax = adc2mV(bufferCompleteD.astype(int), channel_rangeD, maxADC)
 
 # Create time data
 time = np.linspace(0, (totalSamples - 1) * actualSampleInterval, totalSamples)
 
 # Plot data from channel A and B
-plt.plot(time, adc2mVChAMax[:])
-plt.plot(time, adc2mVChBMax[:])
+plt.plot(time, adc2mVChCMax[:])
+plt.plot(time, adc2mVChDMax[:])
 plt.xlabel('Time (s)')
 plt.ylabel('Voltage (mV)')
 plt.show()
