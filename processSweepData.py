@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 
-file = "Data/SlowLinearSlope3.csv"
+file = "Data/slowLinearSlope4.csv"
 fntSz= 30
 
 df = pd.read_csv(file)
