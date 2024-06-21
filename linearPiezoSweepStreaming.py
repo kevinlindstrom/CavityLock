@@ -9,7 +9,7 @@ import math
 
 
 # Output file
-file = "testData.csv"
+file = "slowLinearSlope4.csv"
 
 
 def getTimeUnitFactor(timeEnum):
@@ -48,10 +48,11 @@ wavetype = ctypes.c_int32(3)
 sweepType = ctypes.c_int32(0)
 triggertype = ctypes.c_int32(0)
 triggerSource = ctypes.c_int32(0)
+freq = 0.2
 
 status["setSigGenBuiltInV2"] = ps.ps5000aSetSigGenBuiltInV2(chandle, 
                                                             1000000, 2000000, 
-                                                            wavetype, 0.2, 0.2, 
+                                                            wavetype, freq, freq, 
                                                             0, 1, sweepType, 0,
                                                             0, 0, triggertype,
                                                             triggerSource, 0)
@@ -85,7 +86,7 @@ assert_pico_ok(status["setChD"])
 
 # Size of capture
 sizeOfOneBuffer = 500
-numBuffersToCapture = 200
+numBuffersToCapture = 5000
 totalSamples = sizeOfOneBuffer * numBuffersToCapture
 
 # Create buffers ready for assigning pointers for data collection
@@ -115,7 +116,7 @@ status["setDataBuffersD"] = ps.ps5000aSetDataBuffers(chandle,
 assert_pico_ok(status["setDataBuffersD"])
 
 # Begin streaming mode:
-sampleInterval = ctypes.c_int32(250)
+sampleInterval = ctypes.c_int32(20)
 sampleUnits = ps.PS5000A_TIME_UNITS['PS5000A_US']
 print(sampleUnits)
 # We are not triggering:

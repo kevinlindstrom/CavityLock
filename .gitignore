@@ -1,6 +1,7 @@
 # ------------------------- My git ignore additions
 picosdk-1.0-py3.9/*
 Data/*
+*.csv
 
 # ------------------------- Template gitignore for python projects
 
