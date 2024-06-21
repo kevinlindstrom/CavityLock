@@ -12,6 +12,14 @@ import matplotlib.pyplot as plt
 from picosdk.functions import adc2mV, assert_pico_ok
 import time
 
+
+# Written Function added to Pico Example
+def getTimeUnitFactor(timeEnum):
+    if timeEnum <= 5 and timeEnum >= 0:
+        return [1e-15, 1e-12, 1e-9, 1e-6, 1e-3, 1][timeEnum]
+    else:
+        raise ValueError('Time unit enum index out of range')
+
 # Create chandle and status ready for use
 chandle = ctypes.c_int16()
 status = {}
@@ -49,7 +57,7 @@ analogue_offset = 0.0
 # coupling type = PS5000A_DC = 1
 # range = PS5000A_2V = 7
 # analogue offset = 0 V
-channel_range = ps.PS5000A_RANGE['PS5000A_2V']
+channel_range = ps.PS5000A_RANGE['PS5000A_5V']
 status["setChA"] = ps.ps5000aSetChannel(chandle,
                                         ps.PS5000A_CHANNEL['PS5000A_CHANNEL_A'],
                                         enabled,
@@ -75,7 +83,7 @@ assert_pico_ok(status["setChB"])
 
 # Size of capture
 sizeOfOneBuffer = 500
-numBuffersToCapture = 10
+numBuffersToCapture = 100
 
 totalSamples = sizeOfOneBuffer * numBuffersToCapture
 
@@ -138,10 +146,9 @@ status["runStreaming"] = ps.ps5000aRunStreaming(chandle,
                                                 sizeOfOneBuffer)
 assert_pico_ok(status["runStreaming"])
 
-actualSampleInterval = sampleInterval.value
-actualSampleIntervalNs = actualSampleInterval * 1000
+actualSampleInterval = sampleInterval.value*getTimeUnitFactor(sampleUnits)
 
-print("Capturing at sample interval %s ns" % actualSampleIntervalNs)
+print("Capturing at sample interval %s s" % actualSampleInterval)
 
 # We need a big buffer, not registered with the driver, to keep our complete capture in.
 bufferCompleteA = np.zeros(shape=totalSamples, dtype=np.int16)
@@ -167,15 +174,18 @@ def streaming_callback(handle, noOfSamples, startIndex, overflow, triggerAt, tri
 cFuncPtr = ps.StreamingReadyType(streaming_callback)
 
 # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
+i = 0
 while nextSample < totalSamples and not autoStopOuter:
     wasCalledBack = False
     status["getStreamingLastestValues"] = ps.ps5000aGetStreamingLatestValues(chandle, cFuncPtr, None)
+    i += 1
     if not wasCalledBack:
         # If we weren't called back by the driver, this means no data is ready. Sleep for a short while before trying
         # again.
         time.sleep(0.01)
 
 print("Done grabbing values.")
+print(i)
 
 # Find maximum ADC count value
 # handle = chandle
@@ -185,11 +195,11 @@ status["maximumValue"] = ps.ps5000aMaximumValue(chandle, ctypes.byref(maxADC))
 assert_pico_ok(status["maximumValue"])
 
 # Convert ADC counts data to mV
-adc2mVChAMax = adc2mV(bufferCompleteA, channel_range, maxADC)
-adc2mVChBMax = adc2mV(bufferCompleteB, channel_range, maxADC)
+adc2mVChAMax = adc2mV(bufferCompleteA.astype(int), channel_range, maxADC)
+adc2mVChBMax = adc2mV(bufferCompleteB.astype(int), channel_range, maxADC)
 
 # Create time data
-time = np.linspace(0, (totalSamples - 1) * actualSampleIntervalNs*1e-9, totalSamples)
+time = np.linspace(0, (totalSamples - 1) * actualSampleInterval, totalSamples)
 
 # Plot data from channel A and B
 plt.plot(time, adc2mVChAMax[:])
