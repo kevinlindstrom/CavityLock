@@ -48,7 +48,7 @@ wavetype = ctypes.c_int32(3)
 sweepType = ctypes.c_int32(0)
 triggertype = ctypes.c_int32(0)
 triggerSource = ctypes.c_int32(0)
-freq = 0.2
+freq = 3
 
 status["setSigGenBuiltInV2"] = ps.ps5000aSetSigGenBuiltInV2(chandle, 
                                                             1000000, 2000000, 
@@ -77,7 +77,7 @@ assert_pico_ok(status["setChC"])
 # Set up channel D
 channel_rangeD = ps.PS5000A_RANGE['PS5000A_20V']
 status["setChD"] = ps.ps5000aSetChannel(chandle,
-                                        ps.PS5000A_CHANNEL['PS5000A_CHANNEL_B'],
+                                        ps.PS5000A_CHANNEL['PS5000A_CHANNEL_D'],
                                         enabled,
                                         ps.PS5000A_COUPLING['PS5000A_DC'],
                                         channel_rangeD,
